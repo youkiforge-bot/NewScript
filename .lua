@@ -1,6 +1,9 @@
 --[[
-    ZAKY HUB - FINAL BOSS EDITION (ESP, AIMBOT, ANTILAG)
-    GUI arrastável, minimizável, confirmação ao fechar.
+    ZAKY HUB - FINAL BOSS EDITION
+    - ESP com nomes e highlight RGB (atualização automática ao renascer)
+    - Aimbot suave com verificação de visibilidade (raycast)
+    - AntiLag (remove texturas, partículas, roupas e acessórios)
+    - GUI arrastável, minimizável e confirmação ao fechar
 ]]
 
 -- Serviços
@@ -13,7 +16,7 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = WS.CurrentCamera
 
--- Limpeza
+-- Limpeza de GUI anterior
 if CoreGui:FindFirstChild("ZakyFinalBoss") then
     CoreGui.ZakyFinalBoss:Destroy()
 end
@@ -21,9 +24,9 @@ end
 -- Interface
 local Screen = Instance.new("ScreenGui", CoreGui)
 Screen.Name = "ZakyFinalBoss"
-Screen.ResetOnSpawn = false
+Screen.ResetOnSpawn = false  -- Garante que a GUI sobreviva ao renascimento
 
--- Função de arraste (funciona tanto expandido quanto minimizado)
+-- ================== FUNÇÃO DE ARRASTE ==================
 local function MakeDraggable(frame)
     local dragging, startPos, dragStart
     frame.InputBegan:Connect(function(input)
@@ -46,7 +49,7 @@ local function MakeDraggable(frame)
     end)
 end
 
--- Janela principal
+-- ================== CONSTRUÇÃO DA GUI PRINCIPAL ==================
 local Main = Instance.new("Frame", Screen)
 Main.Name = "Main"
 Main.Size = UDim2.new(0, 400, 0, 450)
@@ -109,51 +112,58 @@ CloseBtn.TextColor3 = Color3.new(1, 1, 1)
 CloseBtn.BorderSizePixel = 0
 Instance.new("UICorner", CloseBtn)
 
--- Popup de confirmação
-local Confirm = Instance.new("Frame", Screen)
-Confirm.Size = UDim2.new(0, 250, 0, 120)
-Confirm.Position = UDim2.new(0.5, -125, 0.4, 0)
-Confirm.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Confirm.Visible = false
+-- ================== POPUP DE CONFIRMAÇÃO MELHORADO ==================
+local ConfirmOverlay = Instance.new("Frame", Screen)
+ConfirmOverlay.Size = UDim2.new(1, 0, 1, 0)
+ConfirmOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+ConfirmOverlay.BackgroundTransparency = 0.5
+ConfirmOverlay.Visible = false
+ConfirmOverlay.ZIndex = 9
+
+local Confirm = Instance.new("Frame", ConfirmOverlay)
+Confirm.Size = UDim2.new(0, 280, 0, 140)
+Confirm.Position = UDim2.new(0.5, -140, 0.4, 0)
+Confirm.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 Confirm.ZIndex = 10
 Confirm.BorderSizePixel = 0
-Instance.new("UICorner", Confirm)
+Instance.new("UICorner", Confirm).CornerRadius = UDim.new(0, 12)
 local s2 = Instance.new("UIStroke", Confirm)
-s2.Color = Color3.new(1, 1, 1)
-s2.Thickness = 1.5
+s2.Color = Color3.fromRGB(255, 0, 80)
+s2.Thickness = 2
 
 local Msg = Instance.new("TextLabel", Confirm)
 Msg.Size = UDim2.new(1, 0, 0, 50)
+Msg.Position = UDim2.new(0, 0, 0, 15)
 Msg.Text = "REALMENTE DESEJA SAIR?"
 Msg.TextColor3 = Color3.new(1, 1, 1)
 Msg.BackgroundTransparency = 1
 Msg.Font = Enum.Font.GothamBold
-Msg.TextSize = 14
+Msg.TextSize = 16
 Msg.BorderSizePixel = 0
 
 local Yes = Instance.new("TextButton", Confirm)
 Yes.Size = UDim2.new(0, 100, 0, 40)
-Yes.Position = UDim2.new(0, 20, 0, 60)
+Yes.Position = UDim2.new(0, 30, 0, 80)
 Yes.Text = "SIM"
-Yes.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+Yes.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
 Yes.TextColor3 = Color3.new(1, 1, 1)
 Yes.BorderSizePixel = 0
 Instance.new("UICorner", Yes)
 
 local No = Instance.new("TextButton", Confirm)
 No.Size = UDim2.new(0, 100, 0, 40)
-No.Position = UDim2.new(1, -120, 0, 60)
+No.Position = UDim2.new(1, -130, 0, 80)
 No.Text = "NÃO"
-No.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+No.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
 No.TextColor3 = Color3.new(1, 1, 1)
 No.BorderSizePixel = 0
 Instance.new("UICorner", No)
 
 CloseBtn.MouseButton1Click:Connect(function()
-    Confirm.Visible = true
+    ConfirmOverlay.Visible = true
 end)
 No.MouseButton1Click:Connect(function()
-    Confirm.Visible = false
+    ConfirmOverlay.Visible = false
 end)
 Yes.MouseButton1Click:Connect(function()
     Screen:Destroy()
@@ -173,7 +183,7 @@ Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     Container.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 10)
 end)
 
--- Função para criar Toggle
+-- Função para criar Toggles
 local function AddToggle(text, callback)
     local btn = Instance.new("TextButton", Container)
     btn.Size = UDim2.new(1, 0, 0, 40)
@@ -191,16 +201,15 @@ local function AddToggle(text, callback)
     end)
 end
 
--- ================== ESP ==================
--- Armazena os Highlights/Billboards criados
-local ESPHighlights = {}
-local ESPBills = {}
+-- ================== SISTEMA DE ESP ==================
+local ESPHighlights = {}  -- [player] = Highlight
+local ESPBills = {}       -- [player] = BillboardGui
 local ESP_Enabled = false
 
+-- Cores RGB animadas
 local function UpdateESPColor()
-    -- Cores RGB em ciclo (arco-íris)
-    local hue = (tick() * 100) % 255  -- velocidade do ciclo
-    local color = Color3.fromHSV(hue/255, 1, 1)
+    local hue = (tick() * 80) % 255
+    local color = Color3.fromHSV(hue / 255, 1, 1)
     for _, hl in pairs(ESPHighlights) do
         if hl and hl.Parent then
             hl.FillColor = color
@@ -208,10 +217,11 @@ local function UpdateESPColor()
     end
 end
 
+-- Cria highlight e billboard para um jogador
 local function SetupESP(player)
     if ESPBills[player] and ESPHighlights[player] then return end
     local char = player.Character
-    if not char then return end
+    if not char or not char:FindFirstChild("Head") then return end
     -- Highlight ao redor do corpo
     local hl = Instance.new("Highlight")
     hl.Name = "ESP_Highlight"
@@ -220,8 +230,7 @@ local function SetupESP(player)
     hl.OutlineColor = Color3.new(1, 1, 1)
     hl.Parent = char
     ESPHighlights[player] = hl
-
-    -- Billboard com o nome
+    -- Billboard com nome
     local bill = Instance.new("BillboardGui")
     bill.Name = "ESP_Name"
     bill.Size = UDim2.new(0, 100, 0, 20)
@@ -235,10 +244,11 @@ local function SetupESP(player)
     label.Font = Enum.Font.GothamBold
     label.TextSize = 12
     label.Text = player.Name
-    bill.Parent = char:WaitForChild("Head", 5)
+    bill.Parent = char.Head
     ESPBills[player] = bill
 end
 
+-- Remove ESP de um jogador
 local function RemoveESP(player)
     if ESPHighlights[player] then
         ESPHighlights[player]:Destroy()
@@ -250,38 +260,84 @@ local function RemoveESP(player)
     end
 end
 
+-- Atualiza ESP para todos os jogadores atuais
 local function RefreshAllESP()
+    if not ESP_Enabled then return end
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
-            if player.Character and player.Character:FindFirstChild("Head") then
-                SetupESP(player)
-            end
+            SetupESP(player)
         end
     end
 end
 
+-- Conecta eventos de renascimento para todos os jogadores existentes
+local function ConnectESPRespawn()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            player.CharacterAdded:Connect(function()
+                if ESP_Enabled then
+                    -- Aguarda o personagem carregar completamente
+                    local char = player.Character
+                    if char and char:FindFirstChild("Head") then
+                        SetupESP(player)
+                    else
+                        -- Se o head não existir ainda, espera
+                        char:WaitForChild("Head", 5)
+                        SetupESP(player)
+                    end
+                end
+            end)
+        end
+    end
+end
+
+-- Chamado ao ativar o ESP
+local function EnableESP()
+    ESP_Enabled = true
+    RefreshAllESP()
+    ConnectESPRespawn()
+end
+
+-- Chamado ao desativar o ESP
+local function DisableESP()
+    ESP_Enabled = false
+    for player, _ in pairs(ESPHighlights) do
+        RemoveESP(player)
+    end
+end
+
+-- Quando um novo jogador entra, se ESP estiver ativo, prepara seu ESP e conecta renascimento
 Players.PlayerAdded:Connect(function(player)
-    if EPS_Enabled and player ~= LocalPlayer then
+    if ESP_Enabled then
         player.CharacterAdded:Connect(function()
             SetupESP(player)
         end)
     end
 end)
-Players.PlayerRemoving:Connect(function(player)
-    RemoveESP(player)
+Players.PlayerRemoving:Connect(RemoveESP)
+
+-- Também conecta o renascimento do próprio jogador local (para reaplicar ESP nos outros)
+LocalPlayer.CharacterAdded:Connect(function()
+    if ESP_Enabled then
+        wait(0.5)  -- Pequeno delay para o personagem carregar
+        RefreshAllESP()
+    end
 end)
 
 -- ================== AIMBOT ==================
 local Aimbot_Enabled = false
-local Aimbot_Distance = 150  -- studs
-local Aimbot_Smoothness = 0.3 -- 0 a 1 (quanto menor, mais suave)
+local Aimbot_Distance = 150
+local Aimbot_Smoothness = 0.3
 
+-- Verifica se o alvo está visível (sem obstruções)
 local function IsVisible(targetPart)
-    local origin = Camera.CFrame.Position
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("Head") then return false end
+    local origin = char.Head.Position
     local direction = (targetPart.Position - origin).Unit
     local distance = (targetPart.Position - origin).Magnitude
     local params = RaycastParams.new()
-    params.FilterDescendantsInstances = {LocalPlayer.Character}
+    params.FilterDescendantsInstances = {char}
     params.FilterType = Enum.RaycastFilterType.Blacklist
     local result = WS:Raycast(origin, direction * distance, params)
     return result == nil or result.Instance:IsDescendantOf(targetPart.Parent)
@@ -289,11 +345,13 @@ end
 
 local function AimbotLoop()
     if not Aimbot_Enabled then return end
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("Head") then return end
     local closest, closestDist = nil, Aimbot_Distance
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
             local head = player.Character.Head
-            local dist = (head.Position - Camera.CFrame.Position).Magnitude
+            local dist = (head.Position - char.Head.Position).Magnitude
             if dist < closestDist and IsVisible(head) then
                 closest = head
                 closestDist = dist
@@ -308,7 +366,7 @@ end
 
 -- ================== ANTILAG ==================
 local function RemoveHeavyObjects()
-    -- Remove texturas e decalques
+    -- Remove texturas, partículas e luzes do mapa
     for _, obj in pairs(WS:GetDescendants()) do
         if obj:IsA("Texture") or obj:IsA("Decal") then
             obj:Destroy()
@@ -317,46 +375,40 @@ local function RemoveHeavyObjects()
         elseif obj:IsA("PointLight") or obj:IsA("SurfaceLight") or obj:IsA("SpotLight") then
             obj.Enabled = false
         elseif obj:IsA("SpecialMesh") then
-            obj.TextureId = ""   -- remove textura de malhas especiais
+            obj.TextureId = ""
         end
     end
-    -- Remove roupas/acessórios de todos os personagens (incluindo o local)
+    -- Remove roupas/acessórios de todos os personagens
     for _, player in pairs(Players:GetPlayers()) do
         if player.Character then
             local char = player.Character
-            -- Remove acessórios (chapéus, óculos, etc.)
             for _, v in pairs(char:GetChildren()) do
                 if v:IsA("Accessory") then
                     v:Destroy()
                 end
             end
-            -- Remove as roupas (Shirt, Pants, ShirtGraphic)
             local shirt = char:FindFirstChild("Shirt")
             if shirt then shirt:Destroy() end
             local pants = char:FindFirstChild("Pants")
             if pants then pants:Destroy() end
             local graphic = char:FindFirstChild("ShirtGraphic")
             if graphic then graphic:Destroy() end
-            -- Remove qualquer BodyColors
             local bodyColors = char:FindFirstChild("BodyColors")
             if bodyColors then bodyColors:Destroy() end
         end
     end
-    -- Remove neblina e efeitos atmosféricos
+    -- Remove efeitos atmosféricos
     if WS:FindFirstChild("Atmosphere") then WS.Atmosphere:Destroy() end
     if WS:FindFirstChild("Sky") then WS.Sky:Destroy() end
-    game:GetService("Lighting"):ClearAllChildren()  -- remove efeitos de luz pós-processamento
+    game:GetService("Lighting"):ClearAllChildren()
 end
 
--- Conectar toggles da UI
-AddToggle("ESP (Nomes + RGB)", function(state)
-    ESP_Enabled = state
+-- Toggles na interface
+AddToggle("ESP (Nomes + Highlight RGB)", function(state)
     if state then
-        RefreshAllESP()
+        EnableESP()
     else
-        for player, _ in pairs(ESPHighlights) do
-            RemoveESP(player)
-        end
+        DisableESP()
     end
 end)
 
@@ -364,11 +416,9 @@ AddToggle("AIMBOT (Visível / Próximo)", function(state)
     Aimbot_Enabled = state
 end)
 
-AddToggle("ANTI LAG (Remove decorações pesadas)", function(state)
+AddToggle("ANTI LAG (Remove gráficos pesados)", function(state)
     if state then
         RemoveHeavyObjects()
-        -- Desliga automaticamente o toggle após execução (não dá para reverter)
-        -- (Opcional: pode deixar ligado, mas sem efeito visual)
     end
 end)
 
@@ -379,13 +429,5 @@ RS.Heartbeat:Connect(function()
     end
     if Aimbot_Enabled then
         AimbotLoop()
-    end
-end)
-
--- Reaplicar ESP quando um personagem novo surgir
-LocalPlayer.CharacterAdded:Connect(function(char)
-    if ESP_Enabled then
-        wait(1) -- aguardar carregar
-        RefreshAllESP()
     end
 end)
