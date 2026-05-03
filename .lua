@@ -1,5 +1,8 @@
 --[[ PARTE 1/4 ]]
 
+-- (Proteção Delta)
+pcall(function() syn.protect_gui = protectgui or syn.protect_gui end)
+
 -- Serviços
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -10,38 +13,35 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = WS.CurrentCamera
 
--- Limpeza de GUI anterior
-if CoreGui:FindFirstChild("ZakyFinalBoss") then
-    CoreGui.ZakyFinalBoss:Destroy()
-end
+-- Limpeza
+if CoreGui:FindFirstChild("ZakyFinalBoss") then CoreGui.ZakyFinalBoss:Destroy() end
 
--- Interface
+-- Interface protegida
 local Screen = Instance.new("ScreenGui", CoreGui)
 Screen.Name = "ZakyFinalBoss"
 Screen.ResetOnSpawn = false
+pcall(function() syn.protect_gui(Screen) end)  -- oculta da detecção
 
--- ================== SISTEMA DE SALVAR/CARREGAR ==================
-local SaveFileName = "ZakyHub_Config.json"
+wait(2)  -- pequeno atraso para não ser detectado no carregamento
+
+-- Salvar/Carregar
+local SaveFileName = "cfg_" .. string.char(90, 97, 107, 121) .. ".json"  -- "Zaky"
 local ToggleStates = {
-    ESP_Players = false,
-    Aimbot = false,
-    AntiLag = false,
-    Noclip = false,
-    ItemESP = false,
-    HealthBarESP = false
+    f1 = false,  -- ESP Jogadores
+    f2 = false,  -- Aimbot
+    f3 = false,  -- AntiLag
+    f4 = false,  -- Noclip
+    f5 = false,  -- Item ESP
+    f6 = false   -- Health Bar ESP
 }
 
 local function SaveConfig()
     local json = game:GetService("HttpService"):JSONEncode(ToggleStates)
-    pcall(function()
-        writefile(SaveFileName, json)
-    end)
+    pcall(function() writefile(SaveFileName, json) end)
 end
 
 local function LoadConfig()
-    local success, data = pcall(function()
-        return readfile(SaveFileName)
-    end)
+    local success, data = pcall(function() return readfile(SaveFileName) end)
     if success and data then
         local decoded = game:GetService("HttpService"):JSONDecode(data)
         for key, val in pairs(decoded) do
@@ -51,11 +51,9 @@ local function LoadConfig()
     end
     return false
 end
+LoadConfig()
 
--- Aplica as configurações carregadas
-local ConfigLoaded = LoadConfig()
-
--- ================== FUNÇÃO DE ARRASTE ==================
+-- Arraste
 local function MakeDraggable(frame)
     local dragging, startPos, dragStart
     frame.InputBegan:Connect(function(input)
@@ -64,9 +62,7 @@ local function MakeDraggable(frame)
             dragStart = input.Position
             startPos = frame.Position
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
         end
     end)
@@ -78,7 +74,7 @@ local function MakeDraggable(frame)
     end)
 end
 
--- ================== CONSTRUÇÃO DA GUI ==================
+-- GUI
 local Main = Instance.new("Frame", Screen)
 Main.Size = UDim2.new(0, 400, 0, 500)
 Main.Position = UDim2.new(0.5, -200, 0.25, 0)
@@ -89,7 +85,6 @@ Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
 local Stroke = Instance.new("UIStroke", Main)
 Stroke.Color = Color3.fromRGB(255, 0, 80)
 Stroke.Thickness = 2
-
 MakeDraggable(Main)
 
 -- Título
@@ -102,7 +97,7 @@ Title.Font = Enum.Font.GothamBold
 Title.TextSize = 16
 Title.BorderSizePixel = 0
 
--- Botão Minimizar
+-- Minimizar
 local Minimized = false
 local OriginalSize = Main.Size
 local MinBtn = Instance.new("TextButton", Main)
@@ -113,24 +108,19 @@ MinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 MinBtn.TextColor3 = Color3.new(1, 1, 1)
 MinBtn.BorderSizePixel = 0
 Instance.new("UICorner", MinBtn)
-
 MinBtn.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
         OriginalSize = Main.Size
-        TS:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Size = UDim2.new(0, 200, 0, 40)
-        }):Play()
+        TS:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 200, 0, 40)}):Play()
         MinBtn.Text = "+"
     else
-        TS:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Size = OriginalSize
-        }):Play()
+        TS:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = OriginalSize}):Play()
         MinBtn.Text = "-"
     end
 end)
 
--- Botão Fechar (X) – fecha direto
+-- Fechar
 local CloseBtn = Instance.new("TextButton", Main)
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -35, 0, 5)
@@ -139,12 +129,9 @@ CloseBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
 CloseBtn.TextColor3 = Color3.new(1, 1, 1)
 CloseBtn.BorderSizePixel = 0
 Instance.new("UICorner", CloseBtn)
+CloseBtn.MouseButton1Click:Connect(function() Screen:Destroy() end)
 
-CloseBtn.MouseButton1Click:Connect(function()
-    Screen:Destroy()
-end)
-
--- Container com scroll
+-- Container
 local Container = Instance.new("ScrollingFrame", Main)
 Container.Size = UDim2.new(1, -20, 1, -60)
 Container.Position = UDim2.new(0, 10, 0, 50)
@@ -158,7 +145,7 @@ Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     Container.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 10)
 end)
 
--- Função para criar Toggles (com suporte a carregar estado inicial)
+-- Função Toggle (com ofuscação)
 local function AddToggle(text, key, callback)
     local btn = Instance.new("TextButton", Container)
     btn.Size = UDim2.new(1, 0, 0, 40)
@@ -167,17 +154,13 @@ local function AddToggle(text, key, callback)
     btn.TextColor3 = Color3.new(1, 1, 1)
     btn.BorderSizePixel = 0
     Instance.new("UICorner", btn)
-
     local active = ToggleStates[key] and true or false
     local function updateVisual()
         btn.BackgroundColor3 = active and Color3.fromRGB(255, 0, 80) or Color3.fromRGB(30, 30, 35)
         btn.Text = (active and "ON" or "OFF") .. " | " .. text
     end
     updateVisual()
-    if active then
-        callback(true)  -- ativa a função se já estava salvo como ligado
-    end
-
+    if active then callback(true) end
     btn.MouseButton1Click:Connect(function()
         active = not active
         ToggleStates[key] = active
@@ -187,17 +170,38 @@ local function AddToggle(text, key, callback)
     end)
 end--[[ PARTE 2/4 ]]
 
+-- ================== PROTEÇÃO DE VELOCIDADE (Hook) ==================
+local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+if hum then
+    pcall(function()
+        local old__index = hookfunction(getmetatable(hum).__index, function(self, key)
+            if key == "WalkSpeed" then
+                return 16  -- sempre retorna valor normal para o anti-cheat
+            end
+            return old__index(self, key)
+        end)
+    end)
+end
+LocalPlayer.CharacterAdded:Connect(function(char)
+    char:WaitForChild("Humanoid")
+    pcall(function()
+        local hum = char.Humanoid
+        local old__index = hookfunction(getmetatable(hum).__index, function(self, key)
+            if key == "WalkSpeed" then return 16 end
+            return old__index(self, key)
+        end)
+    end)
+end)
+
 -- ================== NOCLIP ==================
 local NoclipActive = false
-AddToggle("Noclip (Atravessar Paredes)", "Noclip", function(state)
+AddToggle("Noclip (Atravessar Paredes)", "f4", function(state)
     NoclipActive = state
 end)
 RS.Stepped:Connect(function()
     if NoclipActive and LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
+            if part:IsA("BasePart") then part.CanCollide = false end
         end
     end
 end)
@@ -214,7 +218,6 @@ local function ScanItems()
     ItemHighlights = {}
     ItemBills = {}
     if not ItemESP_Active then return end
-
     for _, obj in pairs(WS:GetDescendants()) do
         if obj:IsA("BasePart") and obj.Transparency < 0.5 then
             local nameLower = obj.Name:lower()
@@ -225,6 +228,7 @@ local function ScanItems()
                     hl.FillColor = Color3.fromRGB(0, 255, 0)
                     hl.FillTransparency = 0.6
                     hl.OutlineColor = Color3.new(1, 1, 1)
+                    hl.Name = "H_" .. math.random(1000,9999)  -- nome aleatório
                     table.insert(ItemHighlights, hl)
 
                     local bill = Instance.new("BillboardGui")
@@ -232,6 +236,7 @@ local function ScanItems()
                     bill.Size = UDim2.new(0, 80, 0, 16)
                     bill.StudsOffset = Vector3.new(0, 2, 0)
                     bill.AlwaysOnTop = true
+                    bill.Name = "B_" .. math.random(1000,9999)
                     local label = Instance.new("TextLabel", bill)
                     label.Size = UDim2.new(1, 0, 1, 0)
                     label.BackgroundTransparency = 1
@@ -248,10 +253,9 @@ local function ScanItems()
     end
 end
 
-AddToggle("ESP de Itens (Baús/Loot)", "ItemESP", function(state)
+AddToggle("ESP de Itens", "f5", function(state)
     ItemESP_Active = state
-    if state then
-        ScanItems()
+    if state then ScanItems()
     else
         for _, h in pairs(ItemHighlights) do if h then h:Destroy() end end
         for _, b in pairs(ItemBills) do if b then b:Destroy() end end
@@ -260,12 +264,9 @@ AddToggle("ESP de Itens (Baús/Loot)", "ItemESP", function(state)
     end
 end)
 
--- Atualizar periodicamente
 spawn(function()
     while true do
-        if ItemESP_Active then
-            ScanItems()
-        end
+        if ItemESP_Active then ScanItems() end
         wait(5)
     end
 end)--[[ PARTE 3/4 ]]
@@ -287,7 +288,7 @@ local function UpdateHealthBarForPlayer(player)
     local head = char.Head
     if not HealthBarObjects[player] then
         local bill = Instance.new("BillboardGui")
-        bill.Name = "HealthBar"
+        bill.Name = "HB_" .. math.random(10000,99999)
         bill.Size = UDim2.new(0, 80, 0, 20)
         bill.StudsOffset = Vector3.new(0, 2.5, 0)
         bill.AlwaysOnTop = true
@@ -327,9 +328,7 @@ end
 local function HealthBarLoop()
     if not HealthBar_Active then return end
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            UpdateHealthBarForPlayer(player)
-        end
+        if player ~= LocalPlayer then UpdateHealthBarForPlayer(player) end
     end
 end
 
@@ -340,17 +339,15 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
-AddToggle("Health Bar ESP", "HealthBarESP", function(state)
+AddToggle("Health Bar ESP", "f6", function(state)
     HealthBar_Active = state
     if not state then
-        for _, obj in pairs(HealthBarObjects) do
-            obj.billboard:Destroy()
-        end
+        for _, obj in pairs(HealthBarObjects) do obj.billboard:Destroy() end
         HealthBarObjects = {}
     end
 end)
 
--- ================== TELEPORT PARA JOGADORES ==================
+-- ================== TELEPORT ==================
 local PlayersLabel = Instance.new("TextLabel", Container)
 PlayersLabel.Size = UDim2.new(1, 0, 0, 20)
 PlayersLabel.Text = "TELEPORTAR PARA:"
@@ -417,8 +414,7 @@ RefreshTeleportList()
 Players.PlayerAdded:Connect(RefreshTeleportList)
 Players.PlayerRemoving:Connect(RefreshTeleportList)--[[ PARTE 4/4 ]]
 
--- ================== ANTIGAS FUNÇÕES ==================
--- ESP de Jogadores
+-- ================== ESP Jogadores ==================
 local ESPPlayers_Active = false
 local ESPHighlights = {}
 local ESPBills = {}
@@ -427,9 +423,7 @@ local function UpdateESPColor()
     local hue = (tick() * 80) % 255
     local color = Color3.fromHSV(hue / 255, 1, 1)
     for _, hl in pairs(ESPHighlights) do
-        if hl and hl.Parent then
-            hl.FillColor = color
-        end
+        if hl and hl.Parent then hl.FillColor = color end
     end
 end
 
@@ -449,6 +443,7 @@ local function SetupESP(player)
     local char = player.Character
     if not char or not char:FindFirstChild("Head") then return end
     local hl = Instance.new("Highlight")
+    hl.Name = "HL_" .. math.random(10000,99999)
     hl.FillTransparency = 0.4
     hl.OutlineTransparency = 0
     hl.OutlineColor = Color3.new(1, 1, 1)
@@ -456,6 +451,7 @@ local function SetupESP(player)
     ESPHighlights[player] = hl
 
     local bill = Instance.new("BillboardGui")
+    bill.Name = "BB_" .. math.random(10000,99999)
     bill.Size = UDim2.new(0, 100, 0, 20)
     bill.StudsOffset = Vector3.new(0, 3, 0)
     bill.AlwaysOnTop = true
@@ -474,17 +470,13 @@ end
 local function RefreshAllESP()
     if not ESPPlayers_Active then return end
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            SetupESP(player)
-        end
+        if player ~= LocalPlayer then SetupESP(player) end
     end
 end
 
 local function BindESPForPlayer(player)
     if player == LocalPlayer then return end
-    player.CharacterRemoving:Connect(function()
-        RemoveESP(player)
-    end)
+    player.CharacterRemoving:Connect(function() RemoveESP(player) end)
     player.CharacterAdded:Connect(function(char)
         if ESPPlayers_Active then
             char:WaitForChild("Head", 5)
@@ -493,31 +485,22 @@ local function BindESPForPlayer(player)
     end)
 end
 
-AddToggle("ESP Jogadores (RGB)", "ESP_Players", function(state)
+AddToggle("ESP Jogadores (RGB)", "f1", function(state)
     ESPPlayers_Active = state
     if state then
-        for _, player in pairs(Players:GetPlayers()) do
-            BindESPForPlayer(player)
-        end
+        for _, player in pairs(Players:GetPlayers()) do BindESPForPlayer(player) end
         Players.PlayerAdded:Connect(function(player)
             BindESPForPlayer(player)
-            if player.Character and player.Character:FindFirstChild("Head") then
-                SetupESP(player)
-            end
+            if player.Character and player.Character:FindFirstChild("Head") then SetupESP(player) end
         end)
         RefreshAllESP()
     else
-        for player, _ in pairs(ESPHighlights) do
-            RemoveESP(player)
-        end
+        for player, _ in pairs(ESPHighlights) do RemoveESP(player) end
     end
 end)
 
 LocalPlayer.CharacterAdded:Connect(function()
-    if ESPPlayers_Active then
-        wait(0.5)
-        RefreshAllESP()
-    end
+    if ESPPlayers_Active then wait(0.5) RefreshAllESP() end
 end)
 
 -- Aimbot
@@ -559,37 +542,25 @@ local function AimbotLoop()
     end
 end
 
-AddToggle("AIMBOT (Visível)", "Aimbot", function(state)
-    Aimbot_Active = state
-end)
+AddToggle("AIMBOT (Visível)", "f2", function(state) Aimbot_Active = state end)
 
 -- AntiLag
 local function RemoveHeavyObjects()
     for _, obj in pairs(WS:GetDescendants()) do
-        if obj:IsA("Texture") or obj:IsA("Decal") then
-            obj:Destroy()
-        elseif obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") then
-            obj.Enabled = false
-        elseif obj:IsA("PointLight") or obj:IsA("SurfaceLight") or obj:IsA("SpotLight") then
-            obj.Enabled = false
-        elseif obj:IsA("SpecialMesh") then
-            obj.TextureId = ""
+        if obj:IsA("Texture") or obj:IsA("Decal") then obj:Destroy()
+        elseif obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") then obj.Enabled = false
+        elseif obj:IsA("PointLight") or obj:IsA("SurfaceLight") or obj:IsA("SpotLight") then obj.Enabled = false
+        elseif obj:IsA("SpecialMesh") then obj.TextureId = ""
         end
     end
     for _, player in pairs(Players:GetPlayers()) do
         if player.Character then
             local char = player.Character
-            for _, v in pairs(char:GetChildren()) do
-                if v:IsA("Accessory") then v:Destroy() end
-            end
-            local shirt = char:FindFirstChild("Shirt")
-            if shirt then shirt:Destroy() end
-            local pants = char:FindFirstChild("Pants")
-            if pants then pants:Destroy() end
-            local graphic = char:FindFirstChild("ShirtGraphic")
-            if graphic then graphic:Destroy() end
-            local bodyColors = char:FindFirstChild("BodyColors")
-            if bodyColors then bodyColors:Destroy() end
+            for _, v in pairs(char:GetChildren()) do if v:IsA("Accessory") then v:Destroy() end end
+            local shirt = char:FindFirstChild("Shirt") if shirt then shirt:Destroy() end
+            local pants = char:FindFirstChild("Pants") if pants then pants:Destroy() end
+            local graphic = char:FindFirstChild("ShirtGraphic") if graphic then graphic:Destroy() end
+            local bodyColors = char:FindFirstChild("BodyColors") if bodyColors then bodyColors:Destroy() end
         end
     end
     if WS:FindFirstChild("Atmosphere") then WS.Atmosphere:Destroy() end
@@ -597,21 +568,11 @@ local function RemoveHeavyObjects()
     game:GetService("Lighting"):ClearAllChildren()
 end
 
-AddToggle("ANTI LAG", "AntiLag", function(state)
-    if state then
-        RemoveHeavyObjects()
-    end
-end)
+AddToggle("ANTI LAG", "f3", function(state) if state then RemoveHeavyObjects() end end)
 
--- ================== LOOPS ==================
+-- Loops
 RS.Heartbeat:Connect(function()
-    if ESPPlayers_Active then
-        UpdateESPColor()
-    end
-    if Aimbot_Active then
-        AimbotLoop()
-    end
-    if HealthBar_Active then
-        HealthBarLoop()
-    end
+    if ESPPlayers_Active then UpdateESPColor() end
+    if Aimbot_Active then AimbotLoop() end
+    if HealthBar_Active then HealthBarLoop() end
 end)
